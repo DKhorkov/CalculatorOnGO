@@ -10,27 +10,33 @@ var answers structures.Answers = structures.Answers{Yes: "yes", No: "no"}
 var operations structures.Operations = structures.Operations{
 	Summarizing: structures.OperationNumberAndDescription{
 		OperationNumber: 1,
-		Description: "Summatize two entered numbers",
+		Description: "Summarize two entered numbers",
+		OperationName : "summarizing",
 	},
 	Subtracting: structures.OperationNumberAndDescription{
 		OperationNumber: 2,
-		Description: "Subtracting two entered numbers",
+		Description: "Subtracte two entered numbers",
+		OperationName : "subtracting",
 	},
 	Multipling: structures.OperationNumberAndDescription{
 		OperationNumber: 3,
-		Description: "Multipling two entered numbers",
+		Description: "Multiply two entered numbers",
+		OperationName : "multipling",
 	},
 	Deviding: structures.OperationNumberAndDescription{
 		OperationNumber: 4,
-		Description: "Deviding two entered numbers",
+		Description: "Devide two entered numbers",
+		OperationName : "deviding",
 	},
 	Powerizing: structures.OperationNumberAndDescription{
 		OperationNumber: 5,
-		Description: "Powerizing two entered numbers",
+		Description: "Powerize two entered numbers",
+		OperationName : "powerizing",
 	},
 	Squaring: structures.OperationNumberAndDescription{
 		OperationNumber: 6,
-		Description: "Squaring two entered numbers",
+		Description: "Square two entered numbers",
+		OperationName : "squaring",
 	},
 }
 
@@ -40,7 +46,9 @@ func main() {
 	calculator := &structures.Calculator{PossibleOperations: operations}
 	
 	// answers.ShowFields()
+	calculator.GreetUser()
 	calculator.GetFirstNumber()
-	calculator.ShowPossibleOperations()
-
+	calculator.GetSecondNumber()
+	// calculator.GetOperationNumber()
+	calculator.Summarize()
 }
