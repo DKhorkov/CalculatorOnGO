@@ -49,6 +49,5 @@ func main() {
 	calculator.GreetUser()
 	calculator.GetFirstNumber()
 	calculator.GetSecondNumber()
-	// calculator.GetOperationNumber()
-	calculator.Summarize()
+	calculator.MakeCalculation()
 }

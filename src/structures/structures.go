@@ -87,7 +87,6 @@ func (operations Operations) ShowOperations() {
 	Поскольку нельзя поставить Дженерик тип данных в возврат из функции, приходится обходитсья структурой с полями разного типа.
 */
 type TypeOfNumber struct {
-	uintField uint64
 	intField int64
 	floatField float64
 }
@@ -109,19 +108,19 @@ func (calculator Calculator) GreetUser() {
 }
 
 func (calculator *Calculator) GetFirstNumber() {
-	fmt.Println("\nPlease, enter the first number:")
+	fmt.Print("\nPlease, enter the first number: ")
 	calculator.FirstNumber = calculator.getNumber()
 }
 
 func (calculator *Calculator) GetSecondNumber() {
-	fmt.Println("\nPlease, enter the second number:")
+	fmt.Print("\nPlease, enter the second number: ")
 	calculator.SecondNumber = calculator.getNumber()
 }
 
 func (calculator *Calculator) getNumber() TypeOfNumber {
 	number, err := calculator.scanNumber()
 	for err != nil {
-		fmt.Println("\nError, you should enter a number! Please, try again:")
+		fmt.Print("\nError, you should enter a number! Please, try again: ")
 		number, err = calculator.scanNumber()
 	}
 
@@ -133,15 +132,8 @@ func (calculator *Calculator) getNumber() TypeOfNumber {
 */
 func (calculator Calculator) scanNumber() (TypeOfNumber, error) {
 	scanner := bufio.NewScanner(os.Stdin)
-
 	scanner.Scan()	
 	input := scanner.Text()
-
-	uint_number, err := strconv.ParseUint(input, 10, 8)
-
-	if err == nil {
-		return TypeOfNumber{uintField: uint_number}, err 
-	}
 
 	int_number, err := strconv.ParseInt(input, 10, 64)
 	if err == nil {
@@ -156,15 +148,33 @@ func (calculator Calculator) showPossibleOperations() {
 	calculator.PossibleOperations.ShowOperations()
 }
 
-func (calculator *Calculator) GetOperationNumber() {
+func (calculator Calculator) MakeCalculation() {
+	calculator.getOperationNumber()
+	switch calculator.OperationNumber {
+	case calculator.PossibleOperations.Summarizing.OperationNumber:
+		calculator.summarize()
+	case calculator.PossibleOperations.Subtracting.OperationNumber:
+		calculator.substract()
+	case calculator.PossibleOperations.Multipling.OperationNumber:
+		calculator.multiply()
+	case calculator.PossibleOperations.Deviding.OperationNumber:
+		calculator.devide()
+	// case calculator.PossibleOperations.Powerizing.OperationNumber:
+	// 	calculator.powerize()
+	// case calculator.PossibleOperations.Squaring.OperationNumber:
+	// 	calculator.square()
+	}
+}
+
+func (calculator *Calculator) getOperationNumber() {
 	operations_numbers := calculator.getOperationsNumbers()
 
 	calculator.showPossibleOperations()
-	fmt.Println("Please, choose operation number from list, presented above:")
+	fmt.Print("\nPlease, choose operation number from list, presented above: ")
 
 	chosen_operation_number, err := calculator.scanOperationNumber()
 	for err != nil || !slices.Contains(operations_numbers, chosen_operation_number) {
-		fmt.Println("\nError, you should enter an integer number from list above! Please, try again:")
+		fmt.Print("\nError, you should enter an integer number from list above! Please, try again: ")
 		chosen_operation_number, err = calculator.scanOperationNumber()
 	}
 
@@ -183,23 +193,17 @@ func (calculator Calculator) getOperationsNumbers() []int {
 
 func (calculator Calculator) scanOperationNumber() (int, error) {
 	scanner := bufio.NewScanner(os.Stdin)
-
 	scanner.Scan()	
 	input := scanner.Text()
-
 	number, err := strconv.ParseInt(input, 10, 8)
 	return int(number), err
 }
 
-func (calculator *Calculator) Summarize() {
-	if calculator.FirstNumber.uintField != 0 && calculator.SecondNumber.uintField != 0 {
-		calculator.LastOperationResult.uintField = calculator.FirstNumber.uintField + calculator.SecondNumber.uintField
-	} else if calculator.FirstNumber.intField != 0 && calculator.SecondNumber.intField !=0 {
+func (calculator *Calculator) summarize() {
+	 if calculator.FirstNumber.intField != 0 && calculator.SecondNumber.intField !=0 {
 		calculator.LastOperationResult.intField = calculator.FirstNumber.intField + calculator.SecondNumber.intField
 	} else {
 		calculator.LastOperationResult.floatField = 
-			float64(calculator.FirstNumber.uintField) + 
-			float64(calculator.SecondNumber.uintField) + 
 			float64(calculator.FirstNumber.intField) + 
 			float64(calculator.SecondNumber.intField) + 
 			calculator.FirstNumber.floatField + 
@@ -207,8 +211,68 @@ func (calculator *Calculator) Summarize() {
 	}
 
 	calculator.refreshNumbers()
-
 	calculator.printResult(calculator.PossibleOperations.Summarizing.OperationName)
+}
+
+func (calculator *Calculator) substract() {
+	if calculator.FirstNumber.intField != 0 && calculator.SecondNumber.intField !=0 {
+		calculator.LastOperationResult.intField = calculator.FirstNumber.intField - calculator.SecondNumber.intField
+	} else {
+		calculator.LastOperationResult.floatField = 
+			float64(calculator.FirstNumber.intField) -
+			float64(calculator.SecondNumber.intField) + 
+			calculator.FirstNumber.floatField - 
+			calculator.SecondNumber.floatField
+	}
+
+	calculator.refreshNumbers()
+	calculator.printResult(calculator.PossibleOperations.Subtracting.OperationName)
+}
+
+func (calculator *Calculator) multiply() {
+	if calculator.FirstNumber.intField != 0 && calculator.SecondNumber.intField !=0 {
+		calculator.LastOperationResult.intField = 
+		calculator.FirstNumber.intField * 
+		calculator.SecondNumber.intField
+	} else if calculator.FirstNumber.intField != 0 {
+		calculator.LastOperationResult.floatField = 
+		float64(calculator.FirstNumber.intField) * 
+		calculator.SecondNumber.floatField
+	} else if calculator.SecondNumber.intField != 0 {
+		calculator.LastOperationResult.floatField = 
+		calculator.FirstNumber.floatField * 
+		float64(calculator.SecondNumber.intField)
+	} else {
+		calculator.LastOperationResult.floatField = 
+		calculator.FirstNumber.floatField * 
+		calculator.SecondNumber.floatField
+	}
+
+	calculator.refreshNumbers()
+	calculator.printResult(calculator.PossibleOperations.Multipling.OperationName)
+}
+
+func (calculator *Calculator) devide() {
+	if calculator.FirstNumber.intField != 0 && calculator.SecondNumber.intField !=0 {
+		calculator.LastOperationResult.intField = 
+		calculator.FirstNumber.intField / 
+		calculator.SecondNumber.intField
+	} else if calculator.FirstNumber.intField != 0 {
+		calculator.LastOperationResult.floatField = 
+		float64(calculator.FirstNumber.intField) /
+		calculator.SecondNumber.floatField
+	} else if calculator.SecondNumber.intField != 0 {
+		calculator.LastOperationResult.floatField = 
+		calculator.FirstNumber.floatField /
+		float64(calculator.SecondNumber.intField)
+	} else {
+		calculator.LastOperationResult.floatField = 
+		calculator.FirstNumber.floatField / 
+		calculator.SecondNumber.floatField
+	}
+
+	calculator.refreshNumbers()
+	calculator.printResult(calculator.PossibleOperations.Deviding.OperationName)
 }
 
 func (calculator *Calculator) refreshNumbers() {
@@ -216,9 +280,7 @@ func (calculator *Calculator) refreshNumbers() {
 }
 
 func (calculator Calculator) printResult(operation_name string) {
-	if calculator.LastOperationResult.uintField != 0 {
-		fmt.Printf("\nResult of %v is %v.\n", operation_name, calculator.LastOperationResult.uintField)
-	} else if calculator.LastOperationResult.intField != 0 {
+	if calculator.LastOperationResult.intField != 0 {
 		fmt.Printf("\nResult of %v is %v.\n", operation_name, calculator.LastOperationResult.intField)
 	} else {
 		fmt.Printf("\nResult of %v is %v.\n", operation_name, calculator.LastOperationResult.floatField)
