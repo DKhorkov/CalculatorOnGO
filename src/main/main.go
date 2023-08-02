@@ -8,35 +8,35 @@ import (
 var answers structures.Answers = structures.Answers{Yes: "yes", No: "no"}
 
 var operations structures.Operations = structures.Operations{
-	Summarizing: structures.OperationNumberAndDescription{
+	Summarizing: structures.OperationInfo{
 		OperationNumber: 1,
 		Description: "Summarize two entered numbers",
-		OperationName : "summarizing",
+		ResultNotification: "\nResult of summarizing %v and %v is %v.\n",
 	},
-	Subtracting: structures.OperationNumberAndDescription{
+	Subtracting: structures.OperationInfo{
 		OperationNumber: 2,
 		Description: "Subtracte two entered numbers",
-		OperationName : "subtracting",
+		ResultNotification: "\nResult of substracting from %v number %v is %v.\n",
 	},
-	Multipling: structures.OperationNumberAndDescription{
+	Multipling: structures.OperationInfo{
 		OperationNumber: 3,
 		Description: "Multiply two entered numbers",
-		OperationName : "multipling",
+		ResultNotification: "\nResult of multiplying %v on %v is %v.\n",
 	},
-	Deviding: structures.OperationNumberAndDescription{
+	Deviding: structures.OperationInfo{
 		OperationNumber: 4,
 		Description: "Devide two entered numbers",
-		OperationName : "deviding",
+		ResultNotification: "\nResult of deviding %v on %v is %v.\n",
 	},
-	Powerizing: structures.OperationNumberAndDescription{
+	Powerizing: structures.OperationInfo{
 		OperationNumber: 5,
 		Description: "Powerize two entered numbers",
-		OperationName : "powerizing",
+		ResultNotification: "\nResult of powerizing %v in %v degree is %v.\n",
 	},
-	Squaring: structures.OperationNumberAndDescription{
+	Squaring: structures.OperationInfo{
 		OperationNumber: 6,
 		Description: "Square two entered numbers",
-		OperationName : "squaring",
+		ResultNotification: "\nResult of getting root from %v of %v degree is %v.\n",
 	},
 }
 

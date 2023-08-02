@@ -3,6 +3,7 @@ package structures
 import (
 	"bufio"
 	"fmt"
+	"math"
 	"os"
 	"reflect"
 	"strconv"
@@ -30,20 +31,20 @@ func (answers Answers) ShowFields() {
 }
 
 
-type OperationNumberAndDescription struct {
-	OperationNumber int
-	Description string
-	OperationName string
+type Operations struct {
+	Summarizing OperationInfo
+	Subtracting OperationInfo
+	Multipling OperationInfo
+	Deviding OperationInfo
+	Powerizing OperationInfo
+	Squaring OperationInfo
 }
 
 
-type Operations struct {
-	Summarizing OperationNumberAndDescription
-	Subtracting OperationNumberAndDescription
-	Multipling OperationNumberAndDescription
-	Deviding OperationNumberAndDescription
-	Powerizing OperationNumberAndDescription
-	Squaring OperationNumberAndDescription
+type OperationInfo struct {
+	OperationNumber int
+	Description string
+	ResultNotification string
 }
 
 
@@ -61,12 +62,12 @@ type Operations struct {
 	https://stackoverflow.com/questions/18926303/iterate-through-the-fields-of-a-struct-in-go
 	https://stackoverflow.com/questions/50098624/reflect-call-of-reflect-value-fieldbyname-on-ptr-value
 */
-func (operations Operations) toSlice() []OperationNumberAndDescription {
+func (operations Operations) toSlice() []OperationInfo {
 	struct_fields := reflect.ValueOf(operations)
-	slice := make([]OperationNumberAndDescription, struct_fields.NumField())
+	slice := make([]OperationInfo, struct_fields.NumField())
 
 	for i := 0; i < struct_fields.NumField(); i++ {
-		field := struct_fields.Field(i).Interface().(OperationNumberAndDescription)
+		field := struct_fields.Field(i).Interface().(OperationInfo)
 		slice[i] = field
 	}
 
@@ -159,10 +160,10 @@ func (calculator Calculator) MakeCalculation() {
 		calculator.multiply()
 	case calculator.PossibleOperations.Deviding.OperationNumber:
 		calculator.devide()
-	// case calculator.PossibleOperations.Powerizing.OperationNumber:
-	// 	calculator.powerize()
-	// case calculator.PossibleOperations.Squaring.OperationNumber:
-	// 	calculator.square()
+	case calculator.PossibleOperations.Powerizing.OperationNumber:
+		calculator.powerize()
+	case calculator.PossibleOperations.Squaring.OperationNumber:
+		calculator.square()
 	}
 }
 
@@ -201,7 +202,9 @@ func (calculator Calculator) scanOperationNumber() (int, error) {
 
 func (calculator *Calculator) summarize() {
 	 if calculator.FirstNumber.intField != 0 && calculator.SecondNumber.intField !=0 {
-		calculator.LastOperationResult.intField = calculator.FirstNumber.intField + calculator.SecondNumber.intField
+		calculator.LastOperationResult.intField = 
+			calculator.FirstNumber.intField + 
+			calculator.SecondNumber.intField
 	} else {
 		calculator.LastOperationResult.floatField = 
 			float64(calculator.FirstNumber.intField) + 
@@ -210,13 +213,15 @@ func (calculator *Calculator) summarize() {
 			calculator.SecondNumber.floatField
 	}
 
+	calculator.printResult(calculator.PossibleOperations.Summarizing)
 	calculator.refreshNumbers()
-	calculator.printResult(calculator.PossibleOperations.Summarizing.OperationName)
 }
 
 func (calculator *Calculator) substract() {
 	if calculator.FirstNumber.intField != 0 && calculator.SecondNumber.intField !=0 {
-		calculator.LastOperationResult.intField = calculator.FirstNumber.intField - calculator.SecondNumber.intField
+		calculator.LastOperationResult.intField = 
+			calculator.FirstNumber.intField - 
+			calculator.SecondNumber.intField
 	} else {
 		calculator.LastOperationResult.floatField = 
 			float64(calculator.FirstNumber.intField) -
@@ -225,64 +230,151 @@ func (calculator *Calculator) substract() {
 			calculator.SecondNumber.floatField
 	}
 
+	calculator.printResult(calculator.PossibleOperations.Subtracting)
 	calculator.refreshNumbers()
-	calculator.printResult(calculator.PossibleOperations.Subtracting.OperationName)
 }
 
 func (calculator *Calculator) multiply() {
 	if calculator.FirstNumber.intField != 0 && calculator.SecondNumber.intField !=0 {
 		calculator.LastOperationResult.intField = 
-		calculator.FirstNumber.intField * 
-		calculator.SecondNumber.intField
+			calculator.FirstNumber.intField * 
+			calculator.SecondNumber.intField
 	} else if calculator.FirstNumber.intField != 0 {
 		calculator.LastOperationResult.floatField = 
-		float64(calculator.FirstNumber.intField) * 
-		calculator.SecondNumber.floatField
+			float64(calculator.FirstNumber.intField) * 
+			calculator.SecondNumber.floatField
 	} else if calculator.SecondNumber.intField != 0 {
 		calculator.LastOperationResult.floatField = 
-		calculator.FirstNumber.floatField * 
-		float64(calculator.SecondNumber.intField)
+			calculator.FirstNumber.floatField * 
+			float64(calculator.SecondNumber.intField)
 	} else {
 		calculator.LastOperationResult.floatField = 
-		calculator.FirstNumber.floatField * 
-		calculator.SecondNumber.floatField
+			calculator.FirstNumber.floatField * 
+			calculator.SecondNumber.floatField
 	}
 
+	calculator.printResult(calculator.PossibleOperations.Multipling)
 	calculator.refreshNumbers()
-	calculator.printResult(calculator.PossibleOperations.Multipling.OperationName)
 }
 
 func (calculator *Calculator) devide() {
 	if calculator.FirstNumber.intField != 0 && calculator.SecondNumber.intField !=0 {
 		calculator.LastOperationResult.intField = 
-		calculator.FirstNumber.intField / 
-		calculator.SecondNumber.intField
+			calculator.FirstNumber.intField / 
+			calculator.SecondNumber.intField
 	} else if calculator.FirstNumber.intField != 0 {
 		calculator.LastOperationResult.floatField = 
-		float64(calculator.FirstNumber.intField) /
-		calculator.SecondNumber.floatField
+			float64(calculator.FirstNumber.intField) /
+			calculator.SecondNumber.floatField
 	} else if calculator.SecondNumber.intField != 0 {
 		calculator.LastOperationResult.floatField = 
-		calculator.FirstNumber.floatField /
-		float64(calculator.SecondNumber.intField)
+			calculator.FirstNumber.floatField /
+			float64(calculator.SecondNumber.intField)
 	} else {
 		calculator.LastOperationResult.floatField = 
-		calculator.FirstNumber.floatField / 
-		calculator.SecondNumber.floatField
+			calculator.FirstNumber.floatField / 
+			calculator.SecondNumber.floatField
 	}
 
+	calculator.printResult(calculator.PossibleOperations.Deviding)
 	calculator.refreshNumbers()
-	calculator.printResult(calculator.PossibleOperations.Deviding.OperationName)
+}
+
+func (calculator *Calculator) powerize() {
+	if calculator.SecondNumber.intField == 0 && calculator.SecondNumber.floatField == 0 {
+		calculator.LastOperationResult.intField = 1
+	} else if calculator.FirstNumber.intField != 0 && calculator.SecondNumber.intField !=0 {
+		calculator.LastOperationResult.intField = 
+		int64(
+			math.Pow(
+				float64(calculator.FirstNumber.intField), 
+				float64(calculator.SecondNumber.intField)))
+	} else if calculator.FirstNumber.intField != 0 {
+		calculator.LastOperationResult.floatField = 
+			math.Pow(
+				float64(calculator.FirstNumber.intField), 
+				calculator.SecondNumber.floatField)
+	} else if calculator.SecondNumber.intField != 0 {
+		calculator.LastOperationResult.floatField = 
+			math.Pow(
+				calculator.FirstNumber.floatField, 
+				float64(calculator.SecondNumber.intField))
+	} else {
+		calculator.LastOperationResult.floatField = 
+			math.Pow(
+				calculator.FirstNumber.floatField, 
+				calculator.SecondNumber.floatField)
+	}
+
+	calculator.printResult(calculator.PossibleOperations.Powerizing)
+	calculator.refreshNumbers()
+}
+
+func (calculator *Calculator) square() {
+	if calculator.SecondNumber.intField == 0 && calculator.SecondNumber.floatField == 0 {
+		calculator.LastOperationResult.floatField = math.Inf(1)
+	} else if calculator.FirstNumber.intField == 0 && calculator.FirstNumber.floatField == 0 {
+		calculator.LastOperationResult.intField = 0
+	} else if calculator.FirstNumber.intField != 0 && calculator.SecondNumber.intField !=0 {
+		calculator.LastOperationResult.floatField = 
+		math.Pow(
+			float64(calculator.FirstNumber.intField), 
+			1.0 / float64(calculator.SecondNumber.intField))
+	} else if calculator.FirstNumber.intField != 0 && calculator.SecondNumber.floatField !=0 {
+		calculator.LastOperationResult.floatField = 
+			math.Pow(
+				float64(calculator.FirstNumber.intField), 
+				1.0 / calculator.SecondNumber.floatField)
+	} else if calculator.FirstNumber.floatField != 0 && calculator.SecondNumber.intField !=0 {
+		calculator.LastOperationResult.floatField = 
+			math.Pow(
+				calculator.FirstNumber.floatField, 
+				1.0 / float64(calculator.SecondNumber.intField))
+	} else {
+		calculator.LastOperationResult.floatField = 
+			math.Pow(
+				calculator.FirstNumber.floatField, 
+				1.0 / calculator.SecondNumber.floatField)
+	}
+
+	calculator.printResult(calculator.PossibleOperations.Squaring)
+	calculator.refreshNumbers()
 }
 
 func (calculator *Calculator) refreshNumbers() {
 	calculator.FirstNumber, calculator.SecondNumber = TypeOfNumber{}, TypeOfNumber{}
 }
 
-func (calculator Calculator) printResult(operation_name string) {
+func (calculator Calculator) printResult(operation_info OperationInfo) {
 	if calculator.LastOperationResult.intField != 0 {
-		fmt.Printf("\nResult of %v is %v.\n", operation_name, calculator.LastOperationResult.intField)
+		fmt.Printf(
+			operation_info.ResultNotification, 
+			calculator.FirstNumber.intField,
+			calculator.SecondNumber.intField,
+			calculator.LastOperationResult.intField)
+	} else if calculator.FirstNumber.intField != 0 && operation_info.OperationNumber == 6 {
+		fmt.Printf(
+			operation_info.ResultNotification, 
+			calculator.FirstNumber.intField,
+			calculator.SecondNumber.intField,
+			calculator.LastOperationResult.floatField)
+	} else if calculator.FirstNumber.intField != 0 {
+		fmt.Printf(
+			operation_info.ResultNotification, 
+			calculator.FirstNumber.intField,
+			calculator.SecondNumber.floatField,
+			calculator.LastOperationResult.floatField)
+	} else if calculator.SecondNumber.intField != 0 {
+		fmt.Printf(
+			operation_info.ResultNotification, 
+			calculator.FirstNumber.floatField,
+			calculator.SecondNumber.intField,
+			calculator.LastOperationResult.floatField)
 	} else {
-		fmt.Printf("\nResult of %v is %v.\n", operation_name, calculator.LastOperationResult.floatField)
+		fmt.Printf(
+			operation_info.ResultNotification, 
+			calculator.FirstNumber.floatField,
+			calculator.SecondNumber.floatField,
+			calculator.LastOperationResult.floatField)
 	}
 }
