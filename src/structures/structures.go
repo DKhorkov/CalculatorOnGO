@@ -13,21 +13,38 @@ import (
 
 
 type Answers struct {
-	Yes string
-	No string
+	Yes AnswerInfo
+	No AnswerInfo
 }
 
+func (answers Answers) toSlice() []AnswerInfo {
+	answers_fields := reflect.ValueOf(answers)
+	slice := make([]AnswerInfo, answers_fields.NumField())
+
+	for i := 0; i < answers_fields.NumField(); i++ {
+		field := answers_fields.Field(i).Interface().(AnswerInfo)
+		slice[i] = field
+	}
+
+	return slice
+}
 
 /*
 	С помощью пакета "reflect" получаем значения структуры, а далее итерируемся по ним и выводим в STDOUT.
 */
-func (answers Answers) ShowFields() {
-	values := reflect.ValueOf(answers)
+func (answers Answers) ShowAnswers() {
+	fmt.Println("\nPossible answers:")
 
-	for i := 0; i < values.NumField(); i++ {
-		value := values.Field(i).Interface()
-		fmt.Printf("%v) %v\n", i + 1, value)
+	answers_slice := answers.toSlice()
+	for _, answer := range answers_slice {
+		fmt.Printf("%v - %v\n", answer.Number, answer.Description)
 	}
+}
+
+
+type AnswerInfo struct {
+	Number int
+	Description string
 }
 
 
@@ -42,7 +59,7 @@ type Operations struct {
 
 
 type OperationInfo struct {
-	OperationNumber int
+	Number int
 	Description string
 	ResultNotification string
 }
@@ -79,7 +96,7 @@ func (operations Operations) ShowOperations() {
 
 	operations_slice := operations.toSlice()
 	for _, operation := range operations_slice {
-		fmt.Printf("%v - %v\n", operation.OperationNumber, operation.Description)
+		fmt.Printf("%v - %v\n", operation.Number, operation.Description)
 	}
 }
 
@@ -102,6 +119,9 @@ type Calculator struct {
 	OperationNumber int
 	PossibleOperations Operations
 	LastOperationResult TypeOfNumber
+	NeedToContinue bool
+	ContinueWithResult bool
+	PossibleAnswers Answers
 }
 
 func (calculator Calculator) GreetUser() {
@@ -145,24 +165,20 @@ func (calculator Calculator) scanNumber() (TypeOfNumber, error) {
 	return TypeOfNumber{floatField: float_number}, err 
 }
 
-func (calculator Calculator) showPossibleOperations() {
-	calculator.PossibleOperations.ShowOperations()
-}
-
-func (calculator Calculator) MakeCalculation() {
+func (calculator *Calculator) MakeCalculation() {
 	calculator.getOperationNumber()
 	switch calculator.OperationNumber {
-	case calculator.PossibleOperations.Summarizing.OperationNumber:
+	case calculator.PossibleOperations.Summarizing.Number:
 		calculator.summarize()
-	case calculator.PossibleOperations.Subtracting.OperationNumber:
+	case calculator.PossibleOperations.Subtracting.Number:
 		calculator.substract()
-	case calculator.PossibleOperations.Multipling.OperationNumber:
+	case calculator.PossibleOperations.Multipling.Number:
 		calculator.multiply()
-	case calculator.PossibleOperations.Deviding.OperationNumber:
+	case calculator.PossibleOperations.Deviding.Number:
 		calculator.devide()
-	case calculator.PossibleOperations.Powerizing.OperationNumber:
+	case calculator.PossibleOperations.Powerizing.Number:
 		calculator.powerize()
-	case calculator.PossibleOperations.Squaring.OperationNumber:
+	case calculator.PossibleOperations.Squaring.Number:
 		calculator.square()
 	}
 }
@@ -170,13 +186,13 @@ func (calculator Calculator) MakeCalculation() {
 func (calculator *Calculator) getOperationNumber() {
 	operations_numbers := calculator.getOperationsNumbers()
 
-	calculator.showPossibleOperations()
+	calculator.PossibleOperations.ShowOperations()
 	fmt.Print("\nPlease, choose operation number from list, presented above: ")
 
-	chosen_operation_number, err := calculator.scanOperationNumber()
+	chosen_operation_number, err := calculator.scanOperationOrAnswerNumber()
 	for err != nil || !slices.Contains(operations_numbers, chosen_operation_number) {
 		fmt.Print("\nError, you should enter an integer number from list above! Please, try again: ")
-		chosen_operation_number, err = calculator.scanOperationNumber()
+		chosen_operation_number, err = calculator.scanOperationOrAnswerNumber()
 	}
 
 	calculator.OperationNumber = chosen_operation_number
@@ -186,13 +202,13 @@ func (calculator Calculator) getOperationsNumbers() []int {
 	operations_slice := calculator.PossibleOperations.toSlice()
 	operations_numbers := make([]int, len(operations_slice))
 	for index, operation := range operations_slice {
-		operations_numbers[index] = operation.OperationNumber
+		operations_numbers[index] = operation.Number
 	}
 
 	return operations_numbers
 }
 
-func (calculator Calculator) scanOperationNumber() (int, error) {
+func (calculator Calculator) scanOperationOrAnswerNumber() (int, error) {
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Scan()	
 	input := scanner.Text()
@@ -352,7 +368,7 @@ func (calculator Calculator) printResult(operation_info OperationInfo) {
 			calculator.FirstNumber.intField,
 			calculator.SecondNumber.intField,
 			calculator.LastOperationResult.intField)
-	} else if calculator.FirstNumber.intField != 0 && operation_info.OperationNumber == 6 {
+	} else if calculator.FirstNumber.intField != 0 && operation_info.Number == 6 {
 		fmt.Printf(
 			operation_info.ResultNotification, 
 			calculator.FirstNumber.intField,
@@ -376,5 +392,80 @@ func (calculator Calculator) printResult(operation_info OperationInfo) {
 			calculator.FirstNumber.floatField,
 			calculator.SecondNumber.floatField,
 			calculator.LastOperationResult.floatField)
+	}
+
+	calculator.createDevidingLine()
+}
+
+func (calculator Calculator) createDevidingLine() {
+	fmt.Println("--------------------------------------------------------------------------------------")
+}
+
+func (calculator *Calculator) CheckNeedToContinue() {
+	fmt.Println("Do you want to make another calculation?")
+	answer_number := calculator.getAnswerNumber()
+	switch answer_number {
+	case calculator.PossibleAnswers.Yes.Number:
+		calculator.NeedToContinue = true
+	case calculator.PossibleAnswers.No.Number:
+		calculator.NeedToContinue = false
+	}
+
+	calculator.createDevidingLine()
+}
+
+func (calculator Calculator) getAnswerNumber() int {
+	answers_numbers := calculator.getAnswersNumbers()
+
+	calculator.PossibleAnswers.ShowAnswers()
+	fmt.Print("\nPlease, choose answer number from list, presented above: ")
+
+	chosen_answer_number, err := calculator.scanOperationOrAnswerNumber()
+	for err != nil || !slices.Contains(answers_numbers, chosen_answer_number) {
+		fmt.Print("\nError, you should enter an integer number from list above! Please, try again: ")
+		chosen_answer_number, err = calculator.scanOperationOrAnswerNumber()
+	}
+
+	return chosen_answer_number
+}
+
+func (calculator Calculator) getAnswersNumbers() []int {
+	answers_slice := calculator.PossibleAnswers.toSlice()
+	answers_numbers := make([]int, len(answers_slice))
+	for index, operation := range answers_slice {
+		answers_numbers[index] = operation.Number
+	}
+
+	return answers_numbers
+}
+
+func (calculator *Calculator) CheckContinueWithResult() {
+	question_text := "\nDo you want make next operation with the last operation result: %v?\n"
+	if calculator.LastOperationResult.intField != 0 {
+		fmt.Printf(
+			question_text, 
+			calculator.LastOperationResult.intField)
+	} else {
+		fmt.Printf(
+			question_text, 
+			calculator.LastOperationResult.floatField)
+	}
+
+	answer_number := calculator.getAnswerNumber()
+	switch answer_number {
+	case calculator.PossibleAnswers.Yes.Number:
+		calculator.ContinueWithResult = true
+	case calculator.PossibleAnswers.No.Number:
+		calculator.ContinueWithResult = false
+	}
+
+	calculator.createDevidingLine()
+}
+
+func (calculator *Calculator) UpdateFirstNumber() {
+	if calculator.LastOperationResult.intField != 0 {
+		calculator.FirstNumber.intField = calculator.LastOperationResult.intField
+	} else {
+		calculator.FirstNumber.floatField = calculator.LastOperationResult.floatField
 	}
 }
