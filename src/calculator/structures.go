@@ -1,105 +1,17 @@
-package structures
+package calculator
 
 import (
 	"bufio"
 	"fmt"
 	"math"
 	"os"
-	"reflect"
 	"strconv"
+
+	"answers"
+	"operations"
 
 	"golang.org/x/exp/slices"
 )
-
-
-type Answers struct {
-	Yes AnswerInfo
-	No AnswerInfo
-}
-
-func (answers Answers) toSlice() []AnswerInfo {
-	answers_fields := reflect.ValueOf(answers)
-	slice := make([]AnswerInfo, answers_fields.NumField())
-
-	for i := 0; i < answers_fields.NumField(); i++ {
-		field := answers_fields.Field(i).Interface().(AnswerInfo)
-		slice[i] = field
-	}
-
-	return slice
-}
-
-/*
-	С помощью пакета "reflect" получаем значения структуры, а далее итерируемся по ним и выводим в STDOUT.
-*/
-func (answers Answers) ShowAnswers() {
-	fmt.Println("\nPossible answers:")
-
-	answers_slice := answers.toSlice()
-	for _, answer := range answers_slice {
-		fmt.Printf("%v - %v\n", answer.Number, answer.Description)
-	}
-}
-
-
-type AnswerInfo struct {
-	Number int
-	Description string
-}
-
-
-type Operations struct {
-	Summarizing OperationInfo
-	Subtracting OperationInfo
-	Multipling OperationInfo
-	Deviding OperationInfo
-	Powerizing OperationInfo
-	Squaring OperationInfo
-}
-
-
-type OperationInfo struct {
-	Number int
-	Description string
-	ResultNotification string
-}
-
-
-/*
-	Обязательно передавать объект Operations, а не указатель на него, иначе произойдет паника.
-	В данном методе мы итерируемся по объекту ValueOf пакета reflect. Для каждого поля структуры мы с помощью метода 
-	Field()	достаем вложенное поле структуры (тоже структура). Но, чтобы компилятор работал корректно, ведь мы возвращаем срез типа []OperationNumberAndDescription, а не срез пустых интерфейсов []interface{}, то необходимо привести данный интерфейс к его реализации (в GO любой объект реализует пустой интерфейс):
-
-				struct_fields.Field(i).Interface().(OperationNumberAndDescription)
-
-	Итерация, которая подходит для данной реализации:
-	https://ru.stackoverflow.com/questions/1026882/%D0%A6%D0%B8%D0%BA%D0%BB-for-%D0%BF%D0%BE-%D0%BF%D0%BE%D0%BB%D1%8F%D0%BC-%D1%81%D1%82%D1%80%D1%83%D0%BA%D1%82%D1%83%D1%80%D1%8B
-
-	Другие варианты, котоыре не подходят для данной реализации, но стоит знать:
-	https://stackoverflow.com/questions/18926303/iterate-through-the-fields-of-a-struct-in-go
-	https://stackoverflow.com/questions/50098624/reflect-call-of-reflect-value-fieldbyname-on-ptr-value
-*/
-func (operations Operations) toSlice() []OperationInfo {
-	struct_fields := reflect.ValueOf(operations)
-	slice := make([]OperationInfo, struct_fields.NumField())
-
-	for i := 0; i < struct_fields.NumField(); i++ {
-		field := struct_fields.Field(i).Interface().(OperationInfo)
-		slice[i] = field
-	}
-
-	return slice
-}
-
-func (operations Operations) ShowOperations() {
-	fmt.Println("\nPossible operations:")
-
-	operations_slice := operations.toSlice()
-	for _, operation := range operations_slice {
-		fmt.Printf("%v - %v\n", operation.Number, operation.Description)
-	}
-}
-
 
 /*
 	Поскольку нельзя поставить Дженерик тип данных в возврат из функции, приходится обходитсья структурой с полями разного типа.
@@ -115,17 +27,23 @@ type TypeOfNumber struct {
 	Имеет два поля, которые являются типом "interfaces.Number"
 */
 type Calculator struct {
-	FirstNumber, SecondNumber TypeOfNumber
+	FirstNumber, SecondNumber, LastOperationResult TypeOfNumber
 	OperationNumber int
-	PossibleOperations Operations
-	LastOperationResult TypeOfNumber
+	PossibleOperations operations.Operations
 	NeedToContinue bool
 	ContinueWithResult bool
-	PossibleAnswers Answers
+	PossibleAnswers answers.Answers
 }
 
 func (calculator Calculator) GreetUser() {
-	fmt.Println("\nWelcome to calculator on GO!")
+	calculator.createDevidingLine()
+	fmt.Println("Welcome to calculator on GO!")
+	calculator.createDevidingLine()
+}
+
+func (calculator Calculator) SayGoodbyeToUser() {
+	fmt.Println("Thanks for using! See you soon!")
+	calculator.createDevidingLine()
 }
 
 func (calculator *Calculator) GetFirstNumber() {
@@ -149,7 +67,7 @@ func (calculator *Calculator) getNumber() TypeOfNumber {
 }
 
 /*
-	Метод возваращет один из типов данных, которые могут реализовать интерфейс "Number", а также ошибку.
+	Метод возваращет структуру TypeOfNumber, чтобы в дальнейшем можно было работать как с int64, так и с float64 типами данных, которые находятся внутри данной структуры. Также метод возвращает ошибку, если такая имеется.
 */
 func (calculator Calculator) scanNumber() (TypeOfNumber, error) {
 	scanner := bufio.NewScanner(os.Stdin)
@@ -178,11 +96,14 @@ func (calculator *Calculator) MakeCalculation() {
 		calculator.devide()
 	case calculator.PossibleOperations.Powerizing.Number:
 		calculator.powerize()
-	case calculator.PossibleOperations.Squaring.Number:
-		calculator.square()
+	case calculator.PossibleOperations.GettingRoot.Number:
+		calculator.getRoot()
 	}
 }
 
+/*
+	Метод получает один из доступных номеров для совершения операции. Если указан некорректный номер или другая невалидная информация, будет запущен бесконечный цикл до тех пор, пока ответ не будет валидным.
+*/
 func (calculator *Calculator) getOperationNumber() {
 	operations_numbers := calculator.getOperationsNumbers()
 
@@ -198,8 +119,11 @@ func (calculator *Calculator) getOperationNumber() {
 	calculator.OperationNumber = chosen_operation_number
 }
 
+/*
+	Метод позволяет получить срез из доступных для использования номеров операций для дальнейшей реализации логики расчетов калькулятора.
+*/
 func (calculator Calculator) getOperationsNumbers() []int {
-	operations_slice := calculator.PossibleOperations.toSlice()
+	operations_slice := calculator.PossibleOperations.ToSlice()
 	operations_numbers := make([]int, len(operations_slice))
 	for index, operation := range operations_slice {
 		operations_numbers[index] = operation.Number
@@ -208,6 +132,9 @@ func (calculator Calculator) getOperationsNumbers() []int {
 	return operations_numbers
 }
 
+/*
+	Метод сканирует вводимое юзером потенциальное число. Если введено не число или число, которое нельзя привести к целочисленному, будет возварщен 0 и ошибка.
+*/
 func (calculator Calculator) scanOperationOrAnswerNumber() (int, error) {
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Scan()	
@@ -274,15 +201,19 @@ func (calculator *Calculator) multiply() {
 }
 
 func (calculator *Calculator) devide() {
-	if calculator.FirstNumber.intField != 0 && calculator.SecondNumber.intField !=0 {
-		calculator.LastOperationResult.intField = 
-			calculator.FirstNumber.intField / 
-			calculator.SecondNumber.intField
-	} else if calculator.FirstNumber.intField != 0 {
+	if calculator.FirstNumber.intField == 0 && calculator.FirstNumber.floatField == 0 {
+		calculator.LastOperationResult.intField = 0
+	} else if calculator.SecondNumber.intField == 0 && calculator.SecondNumber.floatField == 0 {
+		calculator.devideByZero()
+	} else if calculator.FirstNumber.intField != 0 && calculator.SecondNumber.intField !=0 {
+		calculator.LastOperationResult.floatField = 
+			float64(calculator.FirstNumber.intField) / 
+			float64(calculator.SecondNumber.intField)
+	} else if calculator.FirstNumber.intField != 0 && calculator.SecondNumber.floatField !=0 {
 		calculator.LastOperationResult.floatField = 
 			float64(calculator.FirstNumber.intField) /
 			calculator.SecondNumber.floatField
-	} else if calculator.SecondNumber.intField != 0 {
+	} else if calculator.FirstNumber.floatField != 0 && calculator.SecondNumber.intField !=0 {
 		calculator.LastOperationResult.floatField = 
 			calculator.FirstNumber.floatField /
 			float64(calculator.SecondNumber.intField)
@@ -296,9 +227,23 @@ func (calculator *Calculator) devide() {
 	calculator.refreshNumbers()
 }
 
+func (calculator *Calculator) devideByZero() {
+	if calculator.FirstNumber.intField > 0 || calculator.FirstNumber.floatField > 0 {
+		calculator.LastOperationResult.floatField = math.Inf(1)
+	} else 	if calculator.FirstNumber.intField < 0 || calculator.FirstNumber.floatField < 0 {
+		calculator.LastOperationResult.floatField = math.Inf(-1)
+	}
+}
+
 func (calculator *Calculator) powerize() {
-	if calculator.SecondNumber.intField == 0 && calculator.SecondNumber.floatField == 0 {
+	if calculator.FirstNumber.floatField == math.Inf(1)  {
+		calculator.LastOperationResult.floatField = math.Inf(1)
+	} else if calculator.FirstNumber.floatField == math.Inf(-1) {
+		calculator.LastOperationResult.floatField = math.Inf(-1)
+	} else if calculator.SecondNumber.intField == 0 && calculator.SecondNumber.floatField == 0 {
 		calculator.LastOperationResult.intField = 1
+	} else if calculator.SecondNumber.intField < 0 || calculator.SecondNumber.floatField < 0 {
+		calculator.raiseToNegativePower()
 	} else if calculator.FirstNumber.intField != 0 && calculator.SecondNumber.intField !=0 {
 		calculator.LastOperationResult.intField = 
 		int64(
@@ -326,8 +271,37 @@ func (calculator *Calculator) powerize() {
 	calculator.refreshNumbers()
 }
 
-func (calculator *Calculator) square() {
-	if calculator.SecondNumber.intField == 0 && calculator.SecondNumber.floatField == 0 {
+func (calculator *Calculator) raiseToNegativePower() {
+	if calculator.FirstNumber.intField != 0 && calculator.SecondNumber.intField < 0 {
+		calculator.LastOperationResult.floatField = math.Pow(
+				float64(calculator.FirstNumber.intField), 
+				float64(calculator.SecondNumber.intField))
+	} else if calculator.FirstNumber.intField != 0 && calculator.SecondNumber.floatField < 0 {
+		calculator.LastOperationResult.floatField = math.Pow(
+				float64(calculator.FirstNumber.intField), 
+				calculator.SecondNumber.floatField)
+	} else if calculator.FirstNumber.floatField != 0 && calculator.SecondNumber.intField < 0 {
+		calculator.LastOperationResult.floatField = math.Pow(
+				calculator.FirstNumber.floatField, 
+				float64(calculator.SecondNumber.intField))
+	} else {
+		calculator.LastOperationResult.floatField = math.Pow(
+				calculator.FirstNumber.floatField, 
+				calculator.SecondNumber.floatField)
+	}
+
+	if (calculator.FirstNumber.intField < 0 || calculator.FirstNumber.floatField < 0) && 
+		calculator.LastOperationResult.floatField > 0 {
+			calculator.LastOperationResult.floatField *= -1
+	}
+}
+
+func (calculator *Calculator) getRoot() {
+	if calculator.FirstNumber.floatField == math.Inf(1)  {
+		calculator.LastOperationResult.floatField = math.Inf(1)
+	} else if calculator.FirstNumber.floatField == math.Inf(-1) {
+		calculator.LastOperationResult.floatField = math.Inf(-1)
+	} else if calculator.SecondNumber.intField == 0 && calculator.SecondNumber.floatField == 0 {
 		calculator.LastOperationResult.floatField = math.Inf(1)
 	} else if calculator.FirstNumber.intField == 0 && calculator.FirstNumber.floatField == 0 {
 		calculator.LastOperationResult.intField = 0
@@ -353,7 +327,7 @@ func (calculator *Calculator) square() {
 				1.0 / calculator.SecondNumber.floatField)
 	}
 
-	calculator.printResult(calculator.PossibleOperations.Squaring)
+	calculator.printResult(calculator.PossibleOperations.GettingRoot)
 	calculator.refreshNumbers()
 }
 
@@ -361,14 +335,18 @@ func (calculator *Calculator) refreshNumbers() {
 	calculator.FirstNumber, calculator.SecondNumber = TypeOfNumber{}, TypeOfNumber{}
 }
 
-func (calculator Calculator) printResult(operation_info OperationInfo) {
+func (calculator Calculator) printResult(operation_info operations.OperationInfo) {
+	calculator.createDevidingLine()
+
 	if calculator.LastOperationResult.intField != 0 {
 		fmt.Printf(
 			operation_info.ResultNotification, 
 			calculator.FirstNumber.intField,
 			calculator.SecondNumber.intField,
 			calculator.LastOperationResult.intField)
-	} else if calculator.FirstNumber.intField != 0 && operation_info.Number == 6 {
+	} else if calculator.LastOperationResult.floatField != 0 && operation_info.Number == 5 {
+		calculator.printRaisingInNegativePower(operation_info)
+	} else if calculator.FirstNumber.intField != 0 && (operation_info.Number == 6 || operation_info.Number == 4) {
 		fmt.Printf(
 			operation_info.ResultNotification, 
 			calculator.FirstNumber.intField,
@@ -397,10 +375,41 @@ func (calculator Calculator) printResult(operation_info OperationInfo) {
 	calculator.createDevidingLine()
 }
 
+func (calculator Calculator) printRaisingInNegativePower(operation_info operations.OperationInfo) {
+	if calculator.FirstNumber.intField != 0 && calculator.SecondNumber.intField != 0 {
+		fmt.Printf(
+			operation_info.ResultNotification, 
+			calculator.FirstNumber.intField,
+			calculator.SecondNumber.intField,
+			calculator.LastOperationResult.floatField)
+	} else if calculator.FirstNumber.intField != 0 && calculator.SecondNumber.floatField != 0 {
+		fmt.Printf(
+			operation_info.ResultNotification, 
+			calculator.FirstNumber.intField,
+			calculator.SecondNumber.floatField,
+			calculator.LastOperationResult.floatField)
+	} else if calculator.FirstNumber.floatField != 0 && calculator.SecondNumber.intField != 0 {
+		fmt.Printf(
+			operation_info.ResultNotification, 
+			calculator.FirstNumber.floatField,
+			calculator.SecondNumber.intField,
+			calculator.LastOperationResult.floatField)
+	} else {
+		fmt.Printf(
+			operation_info.ResultNotification, 
+			calculator.FirstNumber.floatField,
+			calculator.SecondNumber.floatField,
+			calculator.LastOperationResult.floatField)
+	}
+}
+
 func (calculator Calculator) createDevidingLine() {
 	fmt.Println("--------------------------------------------------------------------------------------")
 }
 
+/*
+	Метод проверяет, желает ли юзер совершить еще какой-либо расчет. В зависимости от этого меняется флаг, используемый для основного алгоритма работы калькулятора.
+*/
 func (calculator *Calculator) CheckNeedToContinue() {
 	fmt.Println("Do you want to make another calculation?")
 	answer_number := calculator.getAnswerNumber()
@@ -414,6 +423,9 @@ func (calculator *Calculator) CheckNeedToContinue() {
 	calculator.createDevidingLine()
 }
 
+/*
+	Метод получает число, относящееся к одному из возможных вариантов ответа на вопрос. Если юзер указал невалдиное число, то начнется работа бесконечного цикла, пока не будет получено валидное число.
+*/
 func (calculator Calculator) getAnswerNumber() int {
 	answers_numbers := calculator.getAnswersNumbers()
 
@@ -429,8 +441,11 @@ func (calculator Calculator) getAnswerNumber() int {
 	return chosen_answer_number
 }
 
+/*
+	Метод позволяет получить числа, которые относятся к структуре с ответами, чтобы в дальнейшем оперировать данным номерами и проверять, корректное ли число ввел юзер.
+*/
 func (calculator Calculator) getAnswersNumbers() []int {
-	answers_slice := calculator.PossibleAnswers.toSlice()
+	answers_slice := calculator.PossibleAnswers.ToSlice()
 	answers_numbers := make([]int, len(answers_slice))
 	for index, operation := range answers_slice {
 		answers_numbers[index] = operation.Number
@@ -439,6 +454,9 @@ func (calculator Calculator) getAnswersNumbers() []int {
 	return answers_numbers
 }
 
+/*
+	Метод проверяет, желает ли юзер продолжить работу с полученным ранее результатом. В зависимости от этого меняется флаг, используемый для основного алгоритма работы калькулятора.
+*/
 func (calculator *Calculator) CheckContinueWithResult() {
 	question_text := "\nDo you want make next operation with the last operation result: %v?\n"
 	if calculator.LastOperationResult.intField != 0 {
@@ -462,10 +480,15 @@ func (calculator *Calculator) CheckContinueWithResult() {
 	calculator.createDevidingLine()
 }
 
+/*
+	Метод перезаписывает результат последней операции в первое число, чтобы можно было совершать дальнейшие операции с ним.
+*/
 func (calculator *Calculator) UpdateFirstNumber() {
 	if calculator.LastOperationResult.intField != 0 {
 		calculator.FirstNumber.intField = calculator.LastOperationResult.intField
 	} else {
 		calculator.FirstNumber.floatField = calculator.LastOperationResult.floatField
 	}
+
+	calculator.LastOperationResult = TypeOfNumber{}
 }

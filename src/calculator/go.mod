@@ -1,4 +1,4 @@
-module structures
+module calculator
 
 go 1.20
 

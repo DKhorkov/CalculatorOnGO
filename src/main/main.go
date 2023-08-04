@@ -1,63 +1,64 @@
 package main
 
 import (
-	"fmt"
-	"structures"
+	"answers"
+	"calculator"
+	"operations"
 )
 
 
-var answers structures.Answers = structures.Answers{
-	Yes: structures.AnswerInfo{
+var possible_answers answers.Answers = answers.Answers{
+	Yes: answers.AnswerInfo{
 		Number: 1, 
 		Description: "Yes",
 		}, 
-	No: structures.AnswerInfo{
+	No: answers.AnswerInfo{
 		Number: 2, 
 		Description: "No",
 		}, 
 }
 
-var operations structures.Operations = structures.Operations{
-	Summarizing: structures.OperationInfo{
+var possible_operations operations.Operations = operations.Operations{
+	Summarizing: operations.OperationInfo{
 		Number: 1,
-		Description: "Summarize two entered numbers",
-		ResultNotification: "\nResult of summarizing %v and %v is %v.\n",
+		Description: "Summarize first number with second",
+		ResultNotification: "Result of summarizing %v and %v is %v.\n",
 	},
-	Subtracting: structures.OperationInfo{
+	Subtracting: operations.OperationInfo{
 		Number: 2,
-		Description: "Subtracte two entered numbers",
-		ResultNotification: "\nResult of substracting from %v number %v is %v.\n",
+		Description: "Subtracte second number from first",
+		ResultNotification: "Result of substracting from %v number %v is %v.\n",
 	},
-	Multipling: structures.OperationInfo{
+	Multipling: operations.OperationInfo{
 		Number: 3,
-		Description: "Multiply two entered numbers",
-		ResultNotification: "\nResult of multiplying %v on %v is %v.\n",
+		Description: "Multiply first number on second",
+		ResultNotification: "Result of multiplying %v on %v is %v.\n",
 	},
-	Deviding: structures.OperationInfo{
+	Deviding: operations.OperationInfo{
 		Number: 4,
-		Description: "Devide two entered numbers",
-		ResultNotification: "\nResult of deviding %v on %v is %v.\n",
+		Description: "Devide first number on second",
+		ResultNotification: "Result of deviding %v on %v is %v.\n",
 	},
-	Powerizing: structures.OperationInfo{
+	Powerizing: operations.OperationInfo{
 		Number: 5,
-		Description: "Powerize two entered numbers",
-		ResultNotification: "\nResult of powerizing %v in %v degree is %v.\n",
+		Description: "Raise the first number to the power of the second number",
+		ResultNotification: "Result of raising %v to the power %v is %v.\n",
 	},
-	Squaring: structures.OperationInfo{
+	GettingRoot: operations.OperationInfo{
 		Number: 6,
-		Description: "Square two entered numbers",
-		ResultNotification: "\nResult of getting root from %v of %v degree is %v.\n",
+		Description: "Taking the root whose power is equal to the second number from the first number",
+		ResultNotification: "Result of getting root from %v of %v degree is %v.\n",
 	},
 }
 
 
 
 func main() {
-	calculator := &structures.Calculator{
-		PossibleOperations: operations, 
+	calculator := &calculator.Calculator{
+		PossibleOperations: possible_operations, 
 		NeedToContinue: true, 
 		ContinueWithResult: false,
-		PossibleAnswers: answers,
+		PossibleAnswers: possible_answers,
 	}
 	
 	calculator.GreetUser()
@@ -71,11 +72,14 @@ func main() {
 		}
 	}
 
-	fmt.Println("\nThanks for using! See you soon!")
+	calculator.SayGoodbyeToUser()
 }
 
 
-func baseAlgorithm(calculator *structures.Calculator) {
+/*
+	Базовая часть алгоритма работы калькулятора, как для использования результата предыдущей операции, так и для новой расчета с учетом первого и второго числа.
+*/
+func baseAlgorithm(calculator *calculator.Calculator) {
 	calculator.GetSecondNumber()
 	calculator.MakeCalculation()
 	calculator.CheckNeedToContinue()
