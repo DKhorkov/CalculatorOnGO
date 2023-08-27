@@ -19,16 +19,16 @@ var operations = Operations{
 	},
 }
 
-func TestOperationsToSlice(t *testing.T) {
+func TestOperationsToSlice(test *testing.T) {
 	operations_slice := operations.ToSlice()
 	operations_slice_len := len(operations_slice)
-	wanted_len := 6
+	expected_len := 6
 
-	if wanted_len != operations_slice_len {
-		t.Fatalf("Operations_slice length is incorrect: %v wanted, but %v received", wanted_len, operations_slice_len)
+	if expected_len != operations_slice_len {
+		test.Fatalf("Operations_slice length is incorrect: %v expected, but %v received", expected_len, operations_slice_len)
 	}
 
 	if reflect.TypeOf(operations_slice) != reflect.TypeOf([]OperationInfo{}) {
-		t.Fatalf("%v is not a slice of type OperationInfo", operations_slice)
+		test.Fatalf("%v is not a slice of type OperationInfo", operations_slice)
 	}
 }

@@ -81,6 +81,7 @@ func main() {
 */
 func baseAlgorithm(calculator *calculator.Calculator) {
 	calculator.GetSecondNumber()
+	calculator.GetOperationNumber()
 	calculator.MakeCalculation()
 	calculator.CheckNeedToContinue()
 

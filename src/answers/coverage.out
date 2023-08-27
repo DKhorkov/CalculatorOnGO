@@ -1,0 +1,6 @@
+mode: set
+answers/answers.go:18.47,22.49 3 1
+answers/answers.go:22.49,25.3 2 1
+answers/answers.go:27.2,27.14 1 1
+answers/answers.go:33.38,37.39 3 0
+answers/answers.go:37.39,39.3 1 0

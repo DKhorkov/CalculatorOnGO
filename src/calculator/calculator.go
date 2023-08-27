@@ -84,7 +84,6 @@ func (calculator Calculator) scanNumber() (TypeOfNumber, error) {
 }
 
 func (calculator *Calculator) MakeCalculation() {
-	calculator.getOperationNumber()
 	switch calculator.OperationNumber {
 	case calculator.PossibleOperations.Summarizing.Number:
 		calculator.summarize()
@@ -104,7 +103,7 @@ func (calculator *Calculator) MakeCalculation() {
 /*
 	Метод получает один из доступных номеров для совершения операции. Если указан некорректный номер или другая невалидная информация, будет запущен бесконечный цикл до тех пор, пока ответ не будет валидным.
 */
-func (calculator *Calculator) getOperationNumber() {
+func (calculator *Calculator) GetOperationNumber() {
 	operations_numbers := calculator.getOperationsNumbers()
 
 	calculator.PossibleOperations.ShowOperations()
@@ -301,6 +300,8 @@ func (calculator *Calculator) getRoot() {
 		calculator.LastOperationResult.floatField = math.Inf(1)
 	} else if calculator.FirstNumber.floatField == math.Inf(-1) {
 		calculator.LastOperationResult.floatField = math.Inf(-1)
+	} else if calculator.FirstNumber.intField < 0 || calculator.FirstNumber.floatField < 0 {
+		calculator.LastOperationResult.floatField = 0
 	} else if calculator.SecondNumber.intField == 0 && calculator.SecondNumber.floatField == 0 {
 		calculator.LastOperationResult.floatField = math.Inf(1)
 	} else if calculator.FirstNumber.intField == 0 && calculator.FirstNumber.floatField == 0 {

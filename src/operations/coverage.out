@@ -1,0 +1,6 @@
+mode: set
+operations/operations.go:40.56,44.48 3 1
+operations/operations.go:44.48,47.3 2 1
+operations/operations.go:49.2,49.14 1 1
+operations/operations.go:52.47,56.45 3 0
+operations/operations.go:56.45,58.3 1 0
